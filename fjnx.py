@@ -1,6 +1,7 @@
 from time import sleep
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException, NoSuchFrameException, StaleElementReferenceException
+from selenium.common.exceptions import NoSuchElementException, NoSuchFrameException, StaleElementReferenceException, \
+    ElementClickInterceptedException
 from selenium.webdriver.chrome.options import Options
 
 loginconf = {
@@ -113,6 +114,7 @@ class Study:
         for x in Study.StudyBase.__subclasses__():
             self.study = x(controller)
             if self.study.test():
+                print(x)
                 self.study.study()
                 break
 
@@ -130,56 +132,17 @@ class Study:
     class StudyOne(StudyBase):
         def test(self):
             try:
-                self.study_chapter_1_block_enter()
-                self.controller.find_element_by_class_name("section-item")
-                self.study_chapter_1_block_exit()
+                self.controller.find_element_by_id("rms-studyRate")
                 return True
-            except (NoSuchElementException, NoSuchFrameException):
+            except NoSuchElementException:
                 return False
 
         def study(self):
-            self.study_chapter_1_block_enter()
-            while self.study_chapter_1_block_start():
-                while self.study_chapter_1_block_next():
-                    sleep(1)
-                sleep(5)
-            self.study_chapter_1_block_exit()
-            while self.study_chapter_1_block_finish():
-                sleep(5)
-
-        def study_chapter_1_block_enter(self):
-            self.controller.switch_to.frame("aliPlayerFrame")
-
-        def study_chapter_1_block_exit(self):
-            self.controller.switch_to.default_content()
-
-        def study_chapter_1_block_start(self):
-            try:
-                self.controller.find_elements_by_xpath("//li[@class='section-item']")[0].click()
-                return True
-            except (IndexError, NoSuchElementException):
-                return False
-
-        def study_chapter_1_block_next(self):
-            try:
-                current = self.controller.find_element_by_xpath("//span[@class='current-time']").text
-                duration = self.controller.find_element_by_xpath("//span[@class='duration']").text
-                if duration == "" or self.cal_time.second(duration) == 0:
-                    return True
-                else:
-                    return self.cal_time.minus(duration, current) > 5
-            except NoSuchElementException:
-                return False
-            except StaleElementReferenceException:
-                return True
-
-        def study_chapter_1_block_finish(self):
-            try:
-                self.controller.find_element_by_xpath(
-                    "/html/body/div[@id='newViewerPlaceHolder']/nav[@id='courseInfoSteps']/ul/li[@id='goNextStep']/a")
-                return False
-            except NoSuchElementException:
-                return True
+            while True:
+                sleep(10)
+                if self.controller.find_element_by_id("rms-studyRate").text in ['100', '100.0', '100.00']:
+                    break
+            sleep(5)
 
     class StudyTwo(StudyBase):
         def test(self):
@@ -241,17 +204,56 @@ class Study:
     class StudyFour(StudyBase):
         def test(self):
             try:
-                self.controller.find_element_by_id("rms-studyRate")
+                self.study_chapter_1_block_enter()
+                self.controller.find_element_by_class_name("section-item")
+                self.study_chapter_1_block_exit()
                 return True
-            except NoSuchElementException:
+            except (NoSuchElementException, NoSuchFrameException):
                 return False
 
         def study(self):
-            while True:
-                sleep(10)
-                if self.controller.find_element_by_id("rms-studyRate").text in ['100','100.0','100.00']:
-                    break
-            sleep(5)
+            self.study_chapter_1_block_enter()
+            while self.study_chapter_1_block_start():
+                while self.study_chapter_1_block_next():
+                    sleep(1)
+                sleep(5)
+            self.study_chapter_1_block_exit()
+            while self.study_chapter_1_block_finish():
+                sleep(5)
+
+        def study_chapter_1_block_enter(self):
+            self.controller.switch_to.frame("aliPlayerFrame")
+
+        def study_chapter_1_block_exit(self):
+            self.controller.switch_to.default_content()
+
+        def study_chapter_1_block_start(self):
+            try:
+                self.controller.find_elements_by_xpath("//li[@class='section-item']")[0].click()
+                return True
+            except (IndexError, NoSuchElementException):
+                return False
+
+        def study_chapter_1_block_next(self):
+            try:
+                current = self.controller.find_element_by_xpath("//span[@class='current-time']").text
+                duration = self.controller.find_element_by_xpath("//span[@class='duration']").text
+                if duration == "" or self.cal_time.second(duration) == 0:
+                    return True
+                else:
+                    return self.cal_time.minus(duration, current) > 5
+            except NoSuchElementException:
+                return False
+            except StaleElementReferenceException:
+                return True
+
+        def study_chapter_1_block_finish(self):
+            try:
+                self.controller.find_element_by_xpath(
+                    "/html/body/div[@id='newViewerPlaceHolder']/nav[@id='courseInfoSteps']/ul/li[@id='goNextStep']/a")
+                return False
+            except NoSuchElementException:
+                return True
 
 
 if __name__ == '__main__':
@@ -269,7 +271,7 @@ if __name__ == '__main__':
         try:
             driver.get_driver().find_element_by_xpath("//div[@title='课程中心']").click()
             break
-        except NoSuchElementException:
+        except (NoSuchElementException, ElementClickInterceptedException):
             sleep(5)
     driver.browser_switch_new()
     sleep(5)
@@ -294,3 +296,4 @@ if __name__ == '__main__':
             driver.browser_pop()
         except NoSuchElementException:
             break
+    driver.logout()
