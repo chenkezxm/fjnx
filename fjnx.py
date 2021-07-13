@@ -137,7 +137,6 @@ class Study:
                 self.last_move_index = 0
             ActionChains(self.controller).move_to_element(
                 self.controller.find_elements_by_tag_name("div")[self.last_move_index]).perform()
-            # self.controller.move_to_element(self.controller.find_elements_by_tag_name("div")[self.last_move_index])
             self.last_move_time = time()
 
     class StudyOne(StudyBase):
@@ -153,6 +152,7 @@ class Study:
                 sleep(10)
                 if time() - self.last_move_time > 800:
                     self.stop_quit()
+                print(self.controller.find_element_by_id("rms-studyRate").text)
                 if self.controller.find_element_by_id("rms-studyRate").text in ['100', '100.0', '100.00']:
                     break
             sleep(5)
@@ -275,6 +275,30 @@ class Study:
                 return True
 
 
+class StudyList:
+    def __init__(self, my_driver):
+        self.driver = my_driver
+        self.left = []
+
+    def test(self):
+        try:
+            for each in self.driver.find_elements_by_xpath("//li[@class='nc-course-card  nc-mycourse-card  ']"):
+                if '课程学习' in each.text:
+                    self.left.append(each)
+            if len(self.left) < 1:
+                return False
+            return True
+        except NoSuchElementException:
+            return False
+
+    def enter(self):
+        if len(self.left) > 0:
+            self.left.pop().click()
+            return True
+        else:
+            return False
+
+
 if __name__ == '__main__':
     driver = Driver()
 
@@ -305,14 +329,11 @@ if __name__ == '__main__':
     driver.get_driver().find_element_by_xpath("//label[@data-type='NOT_STARTED']").click()
     sleep(5)
 
-    while True:
-        try:
-            driver.get_driver().find_element_by_xpath("//li[@class='nc-course-card  nc-mycourse-card  ']")
-            driver.get_driver().find_element_by_xpath("//li[@class='nc-course-card  nc-mycourse-card  ']").click()
+    studyList = StudyList(driver.get_driver())
+    while studyList.test():
+        if studyList.enter():
             driver.browser_switch_new()
             sleep(5)
             Study(driver.get_driver())
             driver.browser_pop()
-        except NoSuchElementException:
-            break
     driver.logout()
