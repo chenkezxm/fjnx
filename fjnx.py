@@ -1,8 +1,8 @@
 from time import time, sleep
+
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, NoSuchFrameException, StaleElementReferenceException, \
     ElementClickInterceptedException
-from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.options import Options
 
 loginconf = {
@@ -132,11 +132,7 @@ class Study:
             pass
 
         def stop_quit(self):
-            self.last_move_index += 1
-            if self.last_move_index >= len(self.controller.find_elements_by_tag_name("div")):
-                self.last_move_index = 0
-            ActionChains(self.controller).move_to_element(
-                self.controller.find_elements_by_tag_name("div")[self.last_move_index]).perform()
+            self.controller.execute_script("document.body.onmousemove=null")
             self.last_move_time = time()
 
     class StudyOne(StudyBase):
@@ -303,6 +299,7 @@ if __name__ == '__main__':
     driver = Driver()
 
     driver.get_driver().get("https://eln.fjnx.com.cn/")
+    driver.get_driver().maximize_window()
     driver.browser_add()
     driver.get_driver().find_element_by_id("loginName").send_keys(loginconf["loginname"])
     driver.get_driver().find_element_by_id("swInput").send_keys(loginconf["loginpwd"])
