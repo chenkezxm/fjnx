@@ -1,7 +1,8 @@
-from time import sleep
+from time import time, sleep
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, NoSuchFrameException, StaleElementReferenceException, \
     ElementClickInterceptedException
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.options import Options
 
 loginconf = {
@@ -110,7 +111,6 @@ class StrTime(object):
 
 class Study:
     def __init__(self, controller):
-        Study.__subclasses__()
         for x in Study.StudyBase.__subclasses__():
             self.study = x(controller)
             if self.study.test():
@@ -122,12 +122,23 @@ class Study:
         def __init__(self, controller):
             self.controller = controller
             self.cal_time = StrTime()
+            self.last_move_time = time()
+            self.last_move_index = 0
 
         def test(self):
             pass
 
         def study(self):
             pass
+
+        def stop_quit(self):
+            self.last_move_index += 1
+            if self.last_move_index >= len(self.controller.find_elements_by_tag_name("div")):
+                self.last_move_index = 0
+            ActionChains(self.controller).move_to_element(
+                self.controller.find_elements_by_tag_name("div")[self.last_move_index]).perform()
+            # self.controller.move_to_element(self.controller.find_elements_by_tag_name("div")[self.last_move_index])
+            self.last_move_time = time()
 
     class StudyOne(StudyBase):
         def test(self):
@@ -140,6 +151,8 @@ class Study:
         def study(self):
             while True:
                 sleep(10)
+                if time() - self.last_move_time > 800:
+                    self.stop_quit()
                 if self.controller.find_element_by_id("rms-studyRate").text in ['100', '100.0', '100.00']:
                     break
             sleep(5)
@@ -155,6 +168,8 @@ class Study:
         def study(self):
             while True:
                 sleep(10)
+                if time() - self.last_move_time > 800:
+                    self.stop_quit()
                 if self.controller.find_element_by_id("studiedTime").text == self.controller.find_element_by_id(
                         "minStudyTime").text:
                     break
@@ -193,6 +208,8 @@ class Study:
                     sleep(10)
             while self.controller.find_element_by_xpath("//div[@class='prism-progress-loaded']").get_attribute(
                     "style") != "width: 100%;":
+                if time() - self.last_move_time > 800:
+                    self.stop_quit()
                 sleep(5)
 
         def study_chapter_3_block_enter(self):
@@ -216,6 +233,8 @@ class Study:
             while self.study_chapter_1_block_start():
                 while self.study_chapter_1_block_next():
                     sleep(1)
+                    if time() - self.last_move_time > 800:
+                        self.stop_quit()
                 sleep(5)
             self.study_chapter_1_block_exit()
             while self.study_chapter_1_block_finish():

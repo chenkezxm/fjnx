@@ -1,2 +1,2 @@
-python study.py
+python fjnx.py
 pause
