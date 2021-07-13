@@ -138,42 +138,6 @@ class Study:
     class StudyOne(StudyBase):
         def test(self):
             try:
-                self.controller.find_element_by_id("rms-studyRate")
-                return True
-            except NoSuchElementException:
-                return False
-
-        def study(self):
-            while True:
-                sleep(10)
-                if time() - self.last_move_time > 800:
-                    self.stop_quit()
-                print(self.controller.find_element_by_id("rms-studyRate").text)
-                if self.controller.find_element_by_id("rms-studyRate").text in ['100', '100.0', '100.00']:
-                    break
-            sleep(5)
-
-    class StudyTwo(StudyBase):
-        def test(self):
-            try:
-                self.controller.find_element_by_id("minStudyTime")
-                return True
-            except NoSuchElementException:
-                return False
-
-        def study(self):
-            while True:
-                sleep(10)
-                if time() - self.last_move_time > 800:
-                    self.stop_quit()
-                if self.controller.find_element_by_id("studiedTime").text == self.controller.find_element_by_id(
-                        "minStudyTime").text:
-                    break
-            sleep(5)
-
-    class StudyThree(StudyBase):
-        def test(self):
-            try:
                 self.controller.find_element_by_class_name("cl-catalog-item-sub")
                 return True
             except NoSuchElementException:
@@ -214,7 +178,7 @@ class Study:
         def study_chapter_3_block_exit(self):
             self.controller.switch_to.default_content()
 
-    class StudyFour(StudyBase):
+    class StudyTwo(StudyBase):
         def test(self):
             try:
                 self.study_chapter_1_block_enter()
@@ -269,6 +233,41 @@ class Study:
                 return False
             except NoSuchElementException:
                 return True
+
+    class StudyThree(StudyBase):
+        def test(self):
+            try:
+                self.controller.find_element_by_id("minStudyTime")
+                return True
+            except NoSuchElementException:
+                return False
+
+        def study(self):
+            while True:
+                sleep(10)
+                if time() - self.last_move_time > 800:
+                    self.stop_quit()
+                if self.controller.find_element_by_id("studiedTime").text == self.controller.find_element_by_id(
+                        "minStudyTime").text:
+                    break
+            sleep(5)
+
+    class StudyFour(StudyBase):
+        def test(self):
+            try:
+                self.controller.find_element_by_id("rms-studyRate")
+                return True
+            except NoSuchElementException:
+                return False
+
+        def study(self):
+            while True:
+                sleep(10)
+                if time() - self.last_move_time > 800:
+                    self.stop_quit()
+                if self.controller.find_element_by_id("rms-studyRate").text in ['100', '100.0', '100.00']:
+                    break
+            sleep(5)
 
 
 class StudyList:
