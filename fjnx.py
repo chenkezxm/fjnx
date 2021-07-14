@@ -123,7 +123,7 @@ class Study:
             self.controller = controller
             self.cal_time = StrTime()
             self.last_move_time = time()
-            self.last_move_index = 0
+            self.time_diff = 1200000
 
         def test(self):
             pass
@@ -132,7 +132,7 @@ class Study:
             pass
 
         def stop_quit(self):
-            self.controller.execute_script("document.body.onmousemove=null")
+            self.controller.find_element_by_class_name("cs-menu-link").click()
             self.last_move_time = time()
 
     class StudyOne(StudyBase):
@@ -168,7 +168,7 @@ class Study:
                     sleep(10)
             while self.controller.find_element_by_xpath("//div[@class='prism-progress-loaded']").get_attribute(
                     "style") != "width: 100%;":
-                if time() - self.last_move_time > 800:
+                if time() - self.last_move_time > self.time_diff:
                     self.stop_quit()
                 sleep(5)
 
@@ -193,7 +193,7 @@ class Study:
             while self.study_chapter_1_block_start():
                 while self.study_chapter_1_block_next():
                     sleep(1)
-                    if time() - self.last_move_time > 800:
+                    if time() - self.last_move_time > self.time_diff:
                         self.stop_quit()
                 sleep(5)
             self.study_chapter_1_block_exit()
@@ -245,7 +245,7 @@ class Study:
         def study(self):
             while True:
                 sleep(10)
-                if time() - self.last_move_time > 800:
+                if time() - self.last_move_time > self.time_diff:
                     self.stop_quit()
                 if self.controller.find_element_by_id("studiedTime").text == self.controller.find_element_by_id(
                         "minStudyTime").text:
@@ -263,7 +263,7 @@ class Study:
         def study(self):
             while True:
                 sleep(10)
-                if time() - self.last_move_time > 800:
+                if time() - self.last_move_time > self.time_diff:
                     self.stop_quit()
                 if self.controller.find_element_by_id("rms-studyRate").text in ['100', '100.0', '100.00']:
                     break
