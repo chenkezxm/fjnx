@@ -5,6 +5,8 @@ from selenium.common.exceptions import NoSuchElementException, NoSuchFrameExcept
     ElementClickInterceptedException
 from selenium.webdriver.chrome.options import Options
 
+import cv2
+
 loginconf = {
     'loginname': "chenke",
     'loginpwd': "Cshzxm100100"
@@ -76,6 +78,42 @@ class Driver(object):
         sleep(5)
         self.driver.quit()
 
+    def get_captcha(self, file):
+        # file = "screenshot.jpg"
+        self.driver.save_screenshot(file)
+        yzm = self.driver.find_element_by_class_name("yzmImg")
+        img = cv2.imread(file)
+        img = img[
+              yzm.location['y']: yzm.location['y'] + yzm.size['height'],
+              yzm.location['x']: yzm.location['x'] + yzm.size['width']
+              ]
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        h, w = img.shape[:2]
+        for y in range(0, w):
+            for x in range(0, h):
+                if y < 5 or y > w - 5:
+                    img[x, y] = 255
+                if x < 5 or x > h - 5:
+                    img[x, y] = 255
+        for y in range(1, w - 1):
+            for x in range(1, h - 1):
+                count = 0
+                if img[x, y - 1] > 245:
+                    count = count + 1
+                if img[x, y + 1] > 245:
+                    count = count + 1
+                if img[x - 1, y] > 245:
+                    count = count + 1
+                if img[x + 1, y] > 245:
+                    count = count + 1
+                if count > 2:
+                    img[x, y] = 255
+        for y in range(0, w):
+            for x in range(0, h):
+                if img[x, y] > 100:
+                    img[x, y] = 255
+        cv2.imwrite(file, img)
+
     def captcha(self):
         self.driver.find_element_by_id("securityCode").send_keys(input("验证码:"))
         sleep(5)
@@ -123,7 +161,7 @@ class Study:
             self.controller = controller
             self.cal_time = StrTime()
             self.last_move_time = time()
-            self.time_diff = 1200000
+            self.time_diff = 29000
 
         def test(self):
             pass
@@ -132,7 +170,7 @@ class Study:
             pass
 
         def stop_quit(self):
-            self.controller.find_element_by_class_name("cs-menu-link").click()
+            self.controller.refresh()
             self.last_move_time = time()
 
     class StudyOne(StudyBase):
