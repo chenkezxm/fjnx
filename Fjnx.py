@@ -115,7 +115,9 @@ class Driver(object):
         cv2.imwrite(file, img)
 
     def captcha(self):
-        self.driver.find_element_by_id("securityCode").send_keys(input("验证码:"))
+        yzm = input("验证码:")
+        self.driver.find_element_by_id("securityCode").send_keys(yzm)
+        self.get_captcha("train/" + yzm + ".png")
         sleep(5)
 
     def close(self):
