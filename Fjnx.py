@@ -1,4 +1,3 @@
-import random
 from time import time, sleep
 
 from selenium import webdriver
@@ -16,21 +15,12 @@ loginconf = {
 
 
 class FjnxGenerateCaptcha(GenerateCaptcha):
-    @staticmethod
-    def get_width():
-        return 58
-
-    @staticmethod
-    def get_height():
-        return 22
-
-    @staticmethod
-    def rndColor():
-        return random.randint(100, 255), random.randint(100, 255), random.randint(100, 255)
+    width = 58
+    height = 22
 
     def get_captcha(self, num, path):
         for i in range(num):
-            image = Image.new('RGB', (self.get_width(), self.get_height()), (255, 255, 255))
+            image = Image.new('RGB', (self.width, self.height), (255, 255, 255))
             font = ImageFont.truetype('C:/Windows/Fonts/Arial.ttf', 15)
             draw = ImageDraw.Draw(image)
             name = self.get_string()
