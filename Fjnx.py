@@ -1,3 +1,4 @@
+import random
 from time import time, sleep
 
 from selenium import webdriver
@@ -5,13 +6,45 @@ from selenium.common.exceptions import NoSuchElementException, NoSuchFrameExcept
     ElementClickInterceptedException
 from selenium.webdriver.chrome.options import Options
 
-from PIL import Image
-from MyCaptcha import UseModel
+from PIL import Image, ImageFont, ImageDraw, ImageFilter
+from MyCaptcha import GenerateCaptcha, UseModel
 
 loginconf = {
     'loginname': "chenke",
     'loginpwd': "Cshzxm100100"
 }
+
+
+class FjnxGenerateCaptcha(GenerateCaptcha):
+    @staticmethod
+    def get_width():
+        return 59
+
+    @staticmethod
+    def get_height():
+        return 23
+
+    @staticmethod
+    def rndColor():
+        return random.randint(64, 255), random.randint(64, 255), random.randint(64, 255)
+
+    @staticmethod
+    def rndColor2():
+        return random.randint(32, 127), random.randint(32, 127), random.randint(32, 127)
+
+    def get_captcha(self, num, path):
+        for i in range(num):
+            image = Image.new('RGB', (self.get_width(), self.get_height()), (255, 255, 255))
+            font = ImageFont.truetype('Arial.ttf', 36)
+            draw = ImageDraw.Draw(image)
+            for x in range(self.get_width()):
+                for y in range(self.get_height()):
+                    draw.point((x, y), fill=self.rndColor())
+            name = self.get_string()
+            for t in range(4):
+                draw.text((60 * t + 10, 10), name[t], font=font, fill=self.rndColor2())
+            image = image.filter(ImageFilter.BLUR)
+            image.save(path + name + ".jpg", 'jpeg')
 
 
 class Driver(object):

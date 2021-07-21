@@ -304,20 +304,12 @@ class GenerateCaptcha:
                 string += self.upper_char[index]
         return string
 
-    @staticmethod
-    def modify(img):
-        threshold = 115
-        img = img.convert("L")
-        img = img.point([0 if x < threshold else 1 for x in range(256)], '1')
-        return img
-
     def get_captcha(self, num, path):
         font_sizes = [x for x in range(40, 45)]
         for i in range(num):
             imc = ImageCaptcha(self.get_width(), self.get_height(), font_sizes=font_sizes)
             name = self.get_string()
             image = imc.generate_image(name)
-            image = self.modify(image)
             image.save(path + name + ".jpg")
 
 
@@ -346,16 +338,7 @@ class UseModel:
         if t.cuda.is_available():
             self.model = self.model.cuda()
 
-    def modify_folder(self, path):
-        for x in os.listdir(path):
-            self.modify_file(path + "/" + x)
-
-    @staticmethod
-    def modify_file(path):
-        GenerateCaptcha.modify(Image.open(path)).save(path)
-
     def run_folder(self, path):
-        self.modify_folder(path)
         userTestDataset = Captcha(path)
         dataLoader = DataLoader(userTestDataset, batch_size=1, shuffle=True, num_workers=1)
         for circle, inputed in enumerate(dataLoader, 0):
@@ -373,7 +356,6 @@ class UseModel:
             return Captcha.LabeltoStr([y[0][0], y[0][1], y[0][2], y[0][3]])
 
     def run_file(self, path):
-        self.modify_file(path)
         userTestDataset = self.LoadFile(path)
         dataLoader = DataLoader(userTestDataset, batch_size=1)
         img = next(iter(dataLoader))
