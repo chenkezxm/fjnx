@@ -17,6 +17,11 @@ from torchnet import meter
 
 
 class Parameters:
+    # 路径相关
+    train_path = "captcha/train"
+    test_path = "captcha/test"
+    model_path = "captcha/model"
+
     # 不可修改的参数
     tensorLength = 248
     charLength = 62
@@ -27,14 +32,14 @@ class Parameters:
     # 可修改的参数
     learningRate = 1e-3
     totalEpoch = 200
-    batchSize = 128
+    batchSize = 100
     printCircle = 10
     testCircle = 100
     testNum = 6
     saveCircle = 200
 
 
-class Visualizer(object):
+class Visualizer:
     def __init__(self, env='default', **kwargs):
         self.vis = visdom.Visdom(env=env, **kwargs)
         self.index = {}
@@ -60,10 +65,9 @@ class Visualizer(object):
 
 class Captcha(data.Dataset):
     def __init__(self, root):
-        self.parameters = Parameters()
         self.imgsPath = [os.path.join(root, img) for img in os.listdir(root)]
         self.transform = transforms.Compose([
-            transforms.Resize((self.parameters.ImageHeight, self.parameters.ImageWidth)),
+            transforms.Resize((Parameters.ImageHeight, Parameters.ImageWidth)),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
         ])
@@ -86,7 +90,7 @@ class Captcha(data.Dataset):
     def StrtoLabel(self, Str):
         # print(Str)
         label = []
-        for i in range(0, self.parameters.charNumber):
+        for i in range(0, Parameters.charNumber):
             if '0' <= Str[i] <= '9':
                 label.append(ord(Str[i]) - ord('0'))
             elif 'a' <= Str[i] <= 'z':
@@ -131,7 +135,7 @@ class ResNet(nn.Module):
             out += self.shortcut(x)
             out = F.relu(out)
             return out
-
+            
     def __init__(self, num_classes=62):
         super(ResNet, self).__init__()
         self.inchannel = 64
@@ -172,39 +176,39 @@ class ResNet(nn.Module):
         return y1, y2, y3, y4
 
     def save(self, circle):
-        name = "captcha/model/resNet" + str(circle) + ".pth"
+        name = Parameters.model_path + "/resNet" + str(circle) + ".pth"
         t.save(self.state_dict(), name)
-        name2 = "captcha/model/resNet_new.pth"
+        name2 = Parameters.model_path + "/resNet_new.pth"
         t.save(self.state_dict(), name2)
 
     def loadIfExist(self):
-        fileList = os.listdir("captcha/model")
+        fileList = os.listdir(Parameters.model_path)
         # print(fileList)
         if "resNet_new.pth" in fileList:
-            name = "captcha/model/resNet_new.pth"
+            name = Parameters.model_path + "/resNet_new.pth"
             self.load_state_dict(t.load(name))
             print("the latest model has been load")
 
 
 class Train:
     def __init__(self):
-        self.parameters = Parameters()
         self.model = ResNet()
-        trainDataset = Captcha("captcha/train/")
-        testDataset = Captcha("captcha/test/")
-        self.trainDataLoader = DataLoader(trainDataset, batch_size=self.parameters.batchSize, shuffle=True,
+        self.model.loadIfExist()
+        trainDataset = Captcha(Parameters.train_path + "/")
+        testDataset = Captcha(Parameters.test_path + "/")
+        self.trainDataLoader = DataLoader(trainDataset, batch_size=Parameters.batchSize, shuffle=True,
                                           num_workers=4)
-        self.testDataLoader = DataLoader(testDataset, batch_size=self.parameters.batchSize, shuffle=True, num_workers=4)
+        self.testDataLoader = DataLoader(testDataset, batch_size=Parameters.batchSize, shuffle=True, num_workers=4)
 
     def train(self):
         avgLoss = 0.0
         if t.cuda.is_available():
             self.model = self.model.cuda()
         criterion = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(self.model.parameters(), lr=self.parameters.learningRate)
+        optimizer = optim.Adam(self.model.parameters(), lr=Parameters.learningRate)
         vis = Visualizer(env="ResCaptcha")
         loss_meter = meter.AverageValueMeter()
-        for epoch in range(self.parameters.totalEpoch):
+        for epoch in range(Parameters.totalEpoch):
             for circle, inputed in tqdm.tqdm(enumerate(self.trainDataLoader, 0)):
                 x, label = inputed
                 if t.cuda.is_available():
@@ -216,33 +220,31 @@ class Train:
                 optimizer.zero_grad()
                 y1, y2, y3, y4 = self.model(x)
                 # print(y1.shape, y2.shape, y3.shape, y4.shape)
-                loss1, loss2, loss3, loss4 = criterion(y1, label1), criterion(y2, label2), criterion(y3,
-                                                                                                     label3), criterion(
-                    y4, label4)
+                loss1, loss2, loss3, loss4 = criterion(y1, label1), criterion(y2, label2), criterion(y3, label3), criterion(y4, label4)
                 loss = loss1 + loss2 + loss3 + loss4
                 loss_meter.add(loss.item())
                 # print(loss)
                 avgLoss += loss.item()
                 loss.backward()
                 optimizer.step()
-                if circle % self.parameters.printCircle == 1:
+                if circle % Parameters.printCircle == 1:
                     print("after %d circle,the train loss is %.5f" %
-                          (circle, avgLoss / self.parameters.printCircle))
+                          (circle, avgLoss / Parameters.printCircle))
                     self.writeFile(
-                        "after %d circle,the train loss is %.5f" % (circle, avgLoss / self.parameters.printCircle))
+                        "after %d circle,the train loss is %.5f" % (circle, avgLoss / Parameters.printCircle))
                     vis.plot_many_stack({"train_loss": avgLoss})
                     avgLoss = 0
-                if circle % self.parameters.testCircle == 1:
+                if circle % Parameters.testCircle == 1:
                     accuracy = self.test()
                     vis.plot_many_stack({"test_acc": accuracy})
-                if circle % self.parameters.saveCircle == 1:
-                    self.model.save(str(epoch) + "_" + str(self.parameters.saveCircle))
+                if circle % Parameters.saveCircle == 1:
+                    self.model.save(str(epoch) + "_" + str(Parameters.saveCircle))
 
     def test(self):
-        totalNum = self.parameters.testNum * self.parameters.batchSize
+        totalNum = Parameters.testNum * Parameters.batchSize
         rightNum = 0
         for circle, inputed in enumerate(self.testDataLoader, 0):
-            if circle >= self.parameters.testNum:
+            if circle >= Parameters.testNum:
                 break
             x, label = inputed
             label = label.long()
@@ -250,16 +252,13 @@ class Train:
                 x = x.cuda()
                 label = label.cuda()
             y1, y2, y3, y4 = self.model(x)
-            y1 = y1.topk(1, dim=1)[1].view(self.parameters.batchSize, 1)
-            y2 = y2.topk(1, dim=1)[1].view(self.parameters.batchSize, 1)
-            y3 = y3.topk(1, dim=1)[1].view(self.parameters.batchSize, 1)
-            y4 = y4.topk(1, dim=1)[1].view(self.parameters.batchSize, 1)
+            y1, y2, y3, y4 = y1.topk(1, dim=1)[1].view(Parameters.batchSize, 1), y2.topk(1, dim=1)[1].view(Parameters.batchSize, 1), y3.topk(1, dim=1)[1].view(Parameters.batchSize, 1), y4.topk(1, dim=1)[1].view(Parameters.batchSize, 1)
             y = t.cat((y1, y2, y3, y4), dim=1)
             diff = (y != label)
             diff = diff.sum(1)
             diff = (diff != 0)
             res = diff.sum(0).item()
-            rightNum += (self.parameters.batchSize - res)
+            rightNum += (Parameters.batchSize - res)
         print("the accuracy of test set is %s" % (str(float(rightNum) / float(totalNum))))
         self.writeFile("the accuracy of test set is %s" % (str(float(rightNum) / float(totalNum))))
         return float(rightNum) / float(totalNum)
@@ -316,42 +315,80 @@ class GenerateCaptcha:
 
 
 class UseModel:
-    def run(self):
-        model = ResNet()
-        model.eval()
-        model.loadIfExist()
+    class LoadFile(data.Dataset):
+        def __init__(self, path):
+            self.path = path
+            self.transform = transforms.Compose([
+                transforms.Resize((Parameters.ImageHeight, Parameters.ImageWidth)),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+            ])
+
+        def __getitem__(self, item):
+            img = Image.open(self.path)
+            img = self.transform(img)
+            return img
+
+        def __len__(self):
+            return 1
+
+    def __init__(self):
+        self.model = ResNet()
+        self.model.eval()
+        self.model.loadIfExist()
         if t.cuda.is_available():
-            model = model.cuda()
-        userTestDataset = Captcha("./userTest/")
+            self.model = self.model.cuda()
+
+    def run_folder(self, path):
+        userTestDataset = Captcha(path)
         dataLoader = DataLoader(userTestDataset, batch_size=1, shuffle=True, num_workers=1)
-        totalNum = 0
-        rightNum = 0
-        for circle, input in enumerate(dataLoader, 0):
+        for circle, inputed in enumerate(dataLoader, 0):
             if circle >= 200:
                 break
-            totalNum += 1
-            x, label = input
+            x, label = inputed
             if t.cuda.is_available():
                 x = x.cuda()
                 label = label.cuda()
-            realLabel = Captcha.LabeltoStr([label[0][0], label[0][1], label[0][2], label[0][3]])
             # print(label,realLabel)
-            y1, y2, y3, y4 = model(x)
-            y1, y2, y3, y4 = y1.topk(1, dim=1)[1].view(1, 1), y2.topk(1, dim=1)[1].view(1, 1), y3.topk(1, dim=1)[
-                1].view(1, 1), y4.topk(1, dim=1)[1].view(1, 1)
+            y1, y2, y3, y4 = self.model(x)
+            y1, y2, y3, y4 = y1.topk(1, dim=1)[1].view(1, 1), y2.topk(1, dim=1)[1].view(1, 1), y3.topk(1, dim=1)[1].view(1, 1), y4.topk(1, dim=1)[1].view(1, 1)
             y = t.cat((y1, y2, y3, y4), dim=1)
             # print(x,label,y)
-            decLabel = Captcha.LabeltoStr([y[0][0], y[0][1], y[0][2], y[0][3]])
-            print("real: %s -> %s , %s" % (realLabel, decLabel, str(realLabel == decLabel)))
-            if realLabel == decLabel:
-                rightNum += 1
-        print("\n total %s, right %s" % (totalNum, rightNum))
+            return Captcha.LabeltoStr([y[0][0], y[0][1], y[0][2], y[0][3]])
+
+    def run_file(self, path):
+        pass
+        userTestDataset = self.LoadFile(path)
+        dataLoader = DataLoader(userTestDataset, batch_size=1)
+        img = next(iter(dataLoader))
+        y1, y2, y3, y4 = self.model(img)
+        y1, y2, y3, y4 = y1.topk(1, dim=1)[1].view(1, 1), y2.topk(1, dim=1)[1].view(1, 1), y3.topk(1, dim=1)[1].view(1, 1), y4.topk(1, dim=1)[1].view(1, 1)
+        y = t.cat((y1, y2, y3, y4), dim=1)
+        return Captcha.LabeltoStr([y[0][0], y[0][1], y[0][2], y[0][3]])
+
+
+class ModelBuild:
+    def retrain(self):
+        for x in os.listdir(Parameters.train_path):
+            os.remove(Parameters.train_path + "/" + x)
+        for x in os.listdir(Parameters.test_path):
+            os.remove(Parameters.test_path + "/" + x)
+        for x in os.listdir(Parameters.model_path):
+            os.remove(Parameters.model_path + "/" + x)
+        self.train()
+
+    def train(self):
+        if len(os.listdir(Parameters.train_path)) == 0:
+            GenerateCaptcha().get_captcha(5000, Parameters.train_path + "/")
+        if len(os.listdir(Parameters.test_path)) == 0:
+            GenerateCaptcha().get_captcha(500, Parameters.test_path + "/")
+        self.optimization()
+
+    @staticmethod
+    def optimization():
+        subprocess.Popen("python -m visdom.server", shell=True)
+        Train().train()
 
 
 if __name__ == '__main__':
-    if len(os.listdir("captcha/train")) == 0:
-        GenerateCaptcha().get_captcha(5000, "captcha/train/")
-    if len(os.listdir("captcha/test")) == 0:
-        GenerateCaptcha().get_captcha(500, "captcha/test/")
-    subprocess.Popen("python -m visdom.server", shell=True)
-    Train().train()
+    ModelBuild().train()

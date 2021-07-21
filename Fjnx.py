@@ -5,7 +5,8 @@ from selenium.common.exceptions import NoSuchElementException, NoSuchFrameExcept
     ElementClickInterceptedException
 from selenium.webdriver.chrome.options import Options
 
-import cv2
+from PIL import Image
+from MyCaptcha import UseModel
 
 loginconf = {
     'loginname': "chenke",
@@ -79,46 +80,38 @@ class Driver(object):
         self.driver.quit()
 
     def get_captcha(self, file):
-        # file = "screenshot.jpg"
-        self.driver.save_screenshot(file)
+        self.driver.save_screenshot("pic/temp.png")
         yzm = self.driver.find_element_by_class_name("yzmImg")
-        img = cv2.imread(file)
-        img = img[
-              yzm.location['y']: yzm.location['y'] + yzm.size['height'],
-              yzm.location['x']: yzm.location['x'] + yzm.size['width']
-              ]
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        h, w = img.shape[:2]
-        for y in range(0, w):
-            for x in range(0, h):
-                if y < 5 or y > w - 5:
-                    img[x, y] = 255
-                if x < 5 or x > h - 5:
-                    img[x, y] = 255
-        for y in range(1, w - 1):
-            for x in range(1, h - 1):
-                count = 0
-                if img[x, y - 1] > 245:
-                    count = count + 1
-                if img[x, y + 1] > 245:
-                    count = count + 1
-                if img[x - 1, y] > 245:
-                    count = count + 1
-                if img[x + 1, y] > 245:
-                    count = count + 1
-                if count > 2:
-                    img[x, y] = 255
-        for y in range(0, w):
-            for x in range(0, h):
-                if img[x, y] > 100:
-                    img[x, y] = 255
-        cv2.imwrite(file, img)
+        img = Image.open("pic/temp.png")
+        img = img.crop((
+            yzm.location['x'],
+            yzm.location['y'],
+            yzm.location['x'] + yzm.size['width'],
+            yzm.location['y'] + yzm.size['height']
+        ))
+        img = img.convert("RGB")
+        img.save(file)
 
     def captcha(self):
-        yzm = input("验证码:")
+        incorrect = False
+        self.get_captcha("pic/screenshot.jpg")
+        yzm = UseModel().run_file("pic/screenshot.jpg")
         self.driver.find_element_by_id("securityCode").send_keys(yzm)
-        self.get_captcha("train/" + yzm + ".png")
         sleep(5)
+        self.driver.find_element_by_class_name("ulogin").click()
+        sleep(5)
+        while self.driver.title == '福万通网络学院':
+            if self.driver.find_element_by_id("error").text == '验证码不正确!':
+                incorrect = True
+                yzm = input("验证码:")
+                self.get_captcha("pic/" + yzm + ".jpg")
+                self.driver.find_element_by_id("securityCode").send_keys(yzm)
+                self.driver.find_element_by_class_name("ulogin").click()
+                sleep(5)
+            sleep(5)
+        if incorrect:
+            from shutil import move
+            move("pic/" + yzm + ".jpg", "train/" + yzm + ".jpg")
 
     def close(self):
         self.driver.quit()
@@ -334,6 +327,24 @@ class StudyList:
             return False
 
 
+def download_captcha():
+    download_driver = Driver().get_driver()
+    download_driver.get("https://eln.fjnx.com.cn/")
+    yzm = download_driver.find_element_by_class_name("yzmImg")
+    download_driver.maximize_window()
+    download_driver.save_screenshot("pic/test.png")
+    from PIL import Image
+    img = Image.open("pic/test.png")
+    img = img.crop((
+        yzm.location['x'],
+        yzm.location['y'],
+        yzm.location['x'] + yzm.size['width'],
+        yzm.location['y'] + yzm.size['height']
+    ))
+    img = img.convert("RGB")
+    img.show()
+
+
 if __name__ == '__main__':
     driver = Driver()
 
@@ -343,8 +354,6 @@ if __name__ == '__main__':
     driver.get_driver().find_element_by_id("loginName").send_keys(loginconf["loginname"])
     driver.get_driver().find_element_by_id("swInput").send_keys(loginconf["loginpwd"])
     driver.captcha()
-    driver.get_driver().find_element_by_class_name("ulogin").click()
-    sleep(5)
 
     while True:
         try:
