@@ -80,14 +80,15 @@ class Driver(object):
         self.driver.quit()
 
     def get_captcha(self, file):
+        board = 1
         self.driver.save_screenshot("pic/temp.png")
         yzm = self.driver.find_element_by_class_name("yzmImg")
         img = Image.open("pic/temp.png")
         img = img.crop((
-            yzm.location['x'],
-            yzm.location['y'],
-            yzm.location['x'] + yzm.size['width'],
-            yzm.location['y'] + yzm.size['height']
+            yzm.location['x'] + board,
+            yzm.location['y'] + board,
+            yzm.location['x'] + yzm.size['width'] - board,
+            yzm.location['y'] + yzm.size['height'] - board
         ))
         img = img.convert("RGB")
         img.save(file)
