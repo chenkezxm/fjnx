@@ -6,7 +6,7 @@ from selenium.common.exceptions import NoSuchElementException, NoSuchFrameExcept
     ElementClickInterceptedException
 from selenium.webdriver.chrome.options import Options
 
-from PIL import Image, ImageFont, ImageDraw, ImageFilter
+from PIL import Image, ImageFont, ImageDraw, ImageEnhance
 from MyCaptcha import GenerateCaptcha, UseModel
 
 loginconf = {
@@ -18,33 +18,29 @@ loginconf = {
 class FjnxGenerateCaptcha(GenerateCaptcha):
     @staticmethod
     def get_width():
-        return 59
+        return 58
 
     @staticmethod
     def get_height():
-        return 23
+        return 22
 
     @staticmethod
     def rndColor():
-        return random.randint(64, 255), random.randint(64, 255), random.randint(64, 255)
-
-    @staticmethod
-    def rndColor2():
-        return random.randint(32, 127), random.randint(32, 127), random.randint(32, 127)
+        return random.randint(100, 255), random.randint(100, 255), random.randint(100, 255)
 
     def get_captcha(self, num, path):
         for i in range(num):
             image = Image.new('RGB', (self.get_width(), self.get_height()), (255, 255, 255))
-            font = ImageFont.truetype('Arial.ttf', 36)
+            font = ImageFont.truetype('C:/Windows/Fonts/Arial.ttf', 15)
             draw = ImageDraw.Draw(image)
-            for x in range(self.get_width()):
-                for y in range(self.get_height()):
-                    draw.point((x, y), fill=self.rndColor())
             name = self.get_string()
             for t in range(4):
-                draw.text((60 * t + 10, 10), name[t], font=font, fill=self.rndColor2())
-            image = image.filter(ImageFilter.BLUR)
+                draw.text((12 * t + 6, 5), name[t], font=font, fill=(0, 0, 0))
             image.save(path + name + ".jpg", 'jpeg')
+
+    def build_data(self):
+        self.get_captcha(5000, "captcha/train/")
+        self.get_captcha(500, "captcha/test/")
 
 
 class Driver(object):
@@ -124,6 +120,14 @@ class Driver(object):
             yzm.location['y'] + yzm.size['height'] - board
         ))
         img = img.convert("RGB")
+        img = ImageEnhance.Color(img).enhance(0.0)
+        img = ImageEnhance.Brightness(img).enhance(2.0)
+        for x in range(img.size[0]):
+            for y in range(img.size[1]):
+                if img.getpixel((x, y)) < (200, 200, 200):
+                    img.putpixel((x, y), (0, 0, 0))
+                else:
+                    img.putpixel((x, y), (255, 255, 255))
         img.save(file)
 
     def captcha(self):
