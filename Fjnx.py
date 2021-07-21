@@ -9,8 +9,8 @@ from PIL import Image, ImageFont, ImageDraw, ImageEnhance
 from MyCaptcha import GenerateCaptcha, UseModel
 
 loginconf = {
-    'loginname': "chenke",
-    'loginpwd': "Cshzxm100100"
+    'loginname': "",
+    'loginpwd': ""
 }
 
 
