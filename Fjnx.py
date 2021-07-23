@@ -135,7 +135,8 @@ class Driver(object):
                 incorrect = True
                 yzm = input("验证码:")
                 self.get_captcha("pic/" + yzm + ".jpg")
-                self.driver.find_element_by_id("securityCode").send_keys(yzm)
+                # self.driver.find_element_by_id("securityCode").send_keys(yzm)
+                self.driver.execute_script("document.getElementById('securityCode').value='" + yzm + "'")
                 self.driver.find_element_by_class_name("ulogin").click()
                 sleep(5)
             sleep(5)
