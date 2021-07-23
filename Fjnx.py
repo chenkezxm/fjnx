@@ -8,10 +8,11 @@ from selenium.webdriver.chrome.options import Options
 from PIL import Image, ImageFont, ImageDraw, ImageEnhance
 from MyCaptcha import GenerateCaptcha, UseModel
 
-loginconf = {
-    'loginname': "",
-    'loginpwd': ""
-}
+from password import loginconf
+# loginconf = {
+#     'loginname': "",
+#     'loginpwd': ""
+# }
 
 
 class FjnxGenerateCaptcha(GenerateCaptcha):
