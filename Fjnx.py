@@ -124,7 +124,8 @@ class Driver(object):
         incorrect = False
         self.get_captcha("pic/screenshot.jpg")
         yzm = UseModel().run_file("pic/screenshot.jpg")
-        self.driver.find_element_by_id("securityCode").send_keys(yzm)
+        # self.driver.find_element_by_id("securityCode").send_keys(yzm)
+        self.driver.execute_script("document.getElementById('securityCode').value='" + yzm + "'")
         sleep(5)
         self.driver.find_element_by_class_name("ulogin").click()
         sleep(5)
@@ -132,7 +133,7 @@ class Driver(object):
             if self.driver.find_element_by_id("error").text == '验证码不正确!':
                 incorrect = True
                 yzm = input("验证码:")
-                self.get_captcha("pic/" + yzm + ".jpg")
+                self.get_captcha("captcha/pic/" + yzm + ".jpg")
                 self.driver.find_element_by_id("securityCode").send_keys(yzm)
                 self.driver.find_element_by_class_name("ulogin").click()
                 sleep(5)

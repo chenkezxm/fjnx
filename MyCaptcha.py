@@ -35,7 +35,7 @@ class Parameters:
     batchSize = 100
     printCircle = 10
     testCircle = 100
-    testNum = 6
+    testNum = 10
     saveCircle = 200
 
 
