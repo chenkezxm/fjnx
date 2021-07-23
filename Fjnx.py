@@ -134,14 +134,14 @@ class Driver(object):
             if self.driver.find_element_by_id("error").text == '验证码不正确!':
                 incorrect = True
                 yzm = input("验证码:")
-                self.get_captcha("captcha/pic/" + yzm + ".jpg")
+                self.get_captcha("pic/" + yzm + ".jpg")
                 self.driver.find_element_by_id("securityCode").send_keys(yzm)
                 self.driver.find_element_by_class_name("ulogin").click()
                 sleep(5)
             sleep(5)
         if incorrect:
             from shutil import move
-            move("pic/" + yzm + ".jpg", "train/" + yzm + ".jpg")
+            move("pic/" + yzm + ".jpg", "captcha/train/" + yzm + ".jpg")
 
     def close(self):
         self.driver.quit()
